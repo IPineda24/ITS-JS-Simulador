@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Certificación JavaScript</title>
+     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden my-10">
+        <header class="bg-blue-600 text-white p-6 text-center">
+            <h1 class="text-2xl font-bold mb-2">Simulador de Certificación JavaScript</h1>
+            <p class="text-sm mb-4">Practica para tu certificación oficial</p>
+            <div class="w-full bg-gray-300 rounded-full h-2.5">
+                <div id="progress-bar" class="bg-yellow-500 h-2.5 rounded-full w-0 transition-all duration-300"></div>
+            </div>
+        </header>
+        
+        <div class="flex justify-between px-6 py-3 bg-blue-50 border-b border-gray-200">
+            <div>Pregunta: <span id="current-question">0</span> de <span id="total-questions">0</span></div>
+            <div>Racha: <span id="streak">0</span></div>
+        </div>
+        
+        <div class="p-6">
+            <div id="question-container" class="mb-8">
+                <!-- La pregunta se insertará aquí -->
+            </div>
+            
+            <div class="flex justify-center">
+                <button id="submit-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded transition duration-300">
+                    Comprobar respuesta
+                </button>
+            </div>
+        </div>
+        
+        <div id="result-container" class="text-center p-8 hidden">
+            <div class="text-5xl mb-4">🏆</div>
+            <h2 class="text-2xl font-bold mb-4">¡Racha terminada!</h2>
+            <div class="mb-6">
+                <div class="flex justify-between max-w-xs mx-auto border-b border-gray-200 py-2">
+                    <span>Preguntas contestadas:</span>
+                    <span id="answered-questions">0</span>
+                </div>
+                <div class="flex justify-between max-w-xs mx-auto border-b border-gray-200 py-2">
+                    <span>Mejor racha:</span>
+                    <span id="best-streak">0</span>
+                </div>
+            </div>
+            <button id="restart-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded transition duration-300">
+                Reiniciar simulador
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // Banco de preguntas
+        const questionBank = [
+            // Preguntas de opción múltiple
+            {
+                type: 'multiple-choice',
+                id: 'function-parameters',
+                variants: [
+                    {
+                        question: "Estás escribiendo una función que modifica la puntuación del jugador en un juego. La función tiene los siguientes requisitos:<br>- Recibe 'score' como número<br>- Recibe 'bonus' como booleano<br>- Recibe 'points' como número<br>- Si no se especifica valor para 'points', debe comenzar en 1<br>- Si 'bonus' es true, los puntos deben duplicarse<br>- Los puntos deben sumarse al puntaje<br>- El puntaje debe ser devuelto al final<br><br>¿Qué código debería colocarse al inicio de la función para manejar correctamente el valor por defecto de 'points'?",
+                        code: "function changeScore(score, bonus, points) {\n  // Código aquí\n  \n  if(bonus === true){\n    points = points * 2;\n  }\n  score = score + points;\n  return score;\n}",
+                        options: [
+                            "if(points == null) points = 1;",
+                            "if(points === undefined) points = 1;",
+                            "points = points || 1;",
+                            "const pointsValue = points ? points : 1;"
+                        ],
+                        correctAnswer: 1
+                    },
+                    {
+                        question: "Necesitas crear una función para calcular el total de una compra. La función tiene estos requisitos:<br>- Recibe 'subtotal' como número<br>- Recibe 'hasDiscount' como booleano<br>- Recibe 'discountAmount' como número<br>- Si no se especifica 'discountAmount', debe ser 0<br>- Si 'hasDiscount' es true, se debe aplicar el descuento al subtotal<br>- La función debe devolver el total final<br><br>¿Qué código debería añadirse al inicio de la función?",
+                        code: "function calculateTotal(subtotal, hasDiscount, discountAmount) {\n  // Código aquí\n  \n  if(hasDiscount === true){\n    subtotal = subtotal - discountAmount;\n  }\n  return subtotal;\n}",
+                        options: [
+                            "discountAmount = discountAmount ?? 0;",
+                            "const discount = discountAmount !== undefined ? discountAmount : 0;",
+                            "if(discountAmount == null) discountAmount = 0;",
+                            "if(!discountAmount) discountAmount = 0;"
+                        ],
+                        correctAnswer: 0
+                    },
+                    {
+                        question: "Estás desarrollando una función para calcular el puntaje final en un videojuego. La función tiene estos requisitos:<br>- Recibe 'baseScore' como número<br>- Recibe 'isPowerUp' como booleano<br>- Recibe 'multiplier' como número<br>- Si no se especifica 'multiplier', debe ser 1<br>- Si 'isPowerUp' es true, se debe aplicar el multiplicador al puntaje base<br>- La función debe devolver el puntaje final<br><br>¿Qué código debería colocarse al inicio de la función?",
+                        code: "function calculateFinalScore(baseScore, isPowerUp, multiplier) {\n  // Código aquí\n  \n  if(isPowerUp === true){\n    baseScore = baseScore * multiplier;\n  }\n  return baseScore;\n}",
+                        options: [
+                            "multiplier = !multiplier ? 1 : multiplier;",
+                            "if(typeof multiplier === 'undefined') multiplier = 1;",
+                            "multiplier = multiplier === undefined ? 1 : multiplier;",
+                            "const mult = multiplier || 1;"
+                        ],
+                        correctAnswer: 2
+                    }
+                ]
+            },
+            
+            // Preguntas de arrastrar y soltar
+            {
+                type: 'drag-drop',
+                id: 'event-listener-order',
+                variants: [
+                    {
+                        question: "Arrastra los pasos en el orden correcto para añadir un event listener a un botón que muestre un mensaje de alerta cuando se hace clic.",
+                        items: [
+                            "Obtener referencia al botón usando document.getElementById('myButton')",
+                            "Definir la función que mostrará la alerta: function showAlert() { alert('¡Botón pulsado!'); }",
+                            "Añadir el event listener al botón: button.addEventListener('click', showAlert);",
+                            "Verificar que el evento funciona haciendo clic en el botón"
+                        ],
+                        correctOrder: [0, 1, 2, 3]
+                    },
+                    {
+                        question: "Arrastra los pasos en el orden correcto para cambiar la imagen de un elemento cuando el usuario pasa el ratón por encima y restaurarla cuando lo retira.",
+                        items: [
+                            "Obtener referencia a la imagen: const img = document.querySelector('#myImage');",
+                            "Guardar la URL original: const originalSrc = img.src;",
+                            "Crear función para el evento mouseover: function hoverImage() { img.src = 'hover.jpg'; }",
+                            "Crear función para el evento mouseout: function resetImage() { img.src = originalSrc; }",
+                            "Añadir los listeners: img.addEventListener('mouseover', hoverImage); img.addEventListener('mouseout', resetImage);"
+                        ],
+                        correctOrder: [0, 1, 2, 3, 4]
+                    },
+                    {
+                        question: "Arrastra los pasos en el orden correcto para implementar la validación de un formulario antes de enviarlo.",
+                        items: [
+                            "Obtener referencia al formulario: const form = document.getElementById('myForm');",
+                            "Crear una función de validación: function validateForm(event) { ... }",
+                            "Prevenir el envío por defecto si hay errores: event.preventDefault();",
+                            "Añadir el event listener: form.addEventListener('submit', validateForm);",
+                            "Enviar el formulario programáticamente si pasa la validación: form.submit();"
+                        ],
+                        correctOrder: [0, 1, 3, 2, 4]
+                    }
+                ]
+            },
+            
+            // Preguntas de selección dropdown
+            {
+                type: 'dropdown-select',
+                id: 'dom-manipulation',
+                variants: [
+                    {
+                        question: "Analiza el árbol DOM en la imagen. Necesitas insertar un elemento 'img' que será el primer elemento en el body. Completa el código seleccionando la opción correcta para cada línea.",
+                        image: {
+                            showTree: true,
+                            treeData: [
+                                { name: "body", level: 0 },
+                                { name: "div", level: 1, parent: "body" },
+                                { name: "script", level: 1, parent: "body" },
+                                { name: "h1", level: 2, parent: "div" },
+                                { name: "p", level: 2, parent: "div" },
+                                { name: "a", level: 2, parent: "div" }
+                            ]
+                        },
+                        code: [
+                            { 
+                                text: "var newImgElement = ", 
+                                options: ["document.createElement('img')", "document.getElementById('img')", "document.querySelector('img')", "document.getElementByTagName('img')"],
+                                correctAnswer: 0
+                            },
+                            { 
+                                text: "newImgElement.src = ", 
+                                options: ["'/images/photo.jpg'", "../img/photo.png", "img.source", "document.images[0]"],
+                                correctAnswer: 0
+                            },
+                            { 
+                                text: "var divElement = document.", 
+                                options: ["getElementById('div')", "querySelector('div')", "getElementsByTagName('div')[0]", "getElementsByClassName('div')[0]"],
+                                correctAnswer: 1
+                            },
+                            { 
+                                text: "document.body.", 
+                                options: ["appendChild(newImgElement)", "insertBefore(newImgElement, divElement)", "prepend(newImgElement)", "append(newImgElement, divElement)"],
+                                correctAnswer: 1
+                            }
+                        ]
+                    },
+                    {
+                        question: "Estás creando dinámicamente un elemento de lista y necesitas añadirlo a una lista existente. Completa el código seleccionando la opción correcta para cada línea.",
+                        image: {
+                            showTree: false
+                        },
+                        code: [
+                            { 
+                                text: "var newListItem = ", 
+                                options: ["document.makeElement('li')", "document.createElement('li')", "new ListItem()", "document.newElement('li')"],
+                                correctAnswer: 1
+                            },
+                            { 
+                                text: "newListItem.textContent = ", 
+                                options: ["'New Item'", "setText('New Item')", "innerHTML = 'New Item'", "value = 'New Item'"],
+                                correctAnswer: 0
+                            },
+                            { 
+                                text: "var unorderedList = document.", 
+                                options: ["getElementById('myList')", "getElementByName('ul')", "findElementById('myList')", "getItems('myList')"],
+                                correctAnswer: 0
+                            },
+                            { 
+                                text: "unorderedList.", 
+                                options: ["add(newListItem)", "appendChild(newListItem)", "push(newListItem)", "insert(newListItem)"],
+                                correctAnswer: 1
+                            }
+                        ]
+                    },
+                    {
+                        question: "Necesitas crear un nuevo botón, asignarle un texto y un evento de clic, y añadirlo al final de un div. Completa el código seleccionando la opción correcta para cada línea.",
+                        image: {
+                            showTree: false
+                        },
+                        code: [
+                            { 
+                                text: "var newButton = ", 
+                                options: ["document.addElement('button')", "document.createElement('button')", "button.create()", "document.makeButton()"],
+                                correctAnswer: 1
+                            },
+                            { 
+                                text: "newButton.innerText = ", 
+                                options: ["'Click Me'", "addText('Click Me')", "value = 'Click Me'", "setText('Click Me')"],
+                                correctAnswer: 0
+                            },
+                            { 
+                                text: "newButton.addEventListener(", 
+                                options: ["'click', handleClick)", "'onClick', handleClick)", "'press', handleClick)", "'tap', handleClick)"],
+                                correctAnswer: 0
+                            },
+                            { 
+                                text: "document.querySelector('#container').", 
+                                options: ["insert(newButton)", "add(newButton)", "appendChild(newButton)", "push(newButton)"],
+                                correctAnswer: 2
+                            }
+                        ]
+                    }
+                ]
+            },
+            
+            // Preguntas de selección múltiple (checkboxes)
+            {
+                type: 'multi-select',
+                id: 'event-listeners',
+                variants: [
+                    {
+                        question: "Estás creando una página HTML dinámica usando JavaScript. Tu página tiene una imagen del sol. Cuando el puntero del usuario se mueve sobre la imagen, debe cambiar a una imagen de la luna. Cuando el puntero ya no está sobre la imagen, debe volver a la imagen del sol.<br><br>¿Qué dos eventos debes programar para esto? (Selecciona dos.)",
+                        options: [
+                            "onmouseenter",
+                            "onmouseout",
+                            "onmouseover",
+                            "onmousedown",
+                            "onmouseup"
+                        ],
+                        correctAnswers: [2, 1]
+                    },
+                    {
+                        question: "Estás desarrollando una aplicación web que requiere validación de formularios. Necesitas verificar los datos tanto cuando el usuario escribe como cuando intenta enviar el formulario.<br><br>¿Qué dos eventos necesitarías manejar para implementar esta funcionalidad? (Selecciona dos.)",
+                        options: [
+                            "onchange",
+                            "onclick",
+                            "onsubmit", 
+                            "oninput",
+                            "onfocus"
+                        ],
+                        correctAnswers: [3, 2]
+                    },
+                    {
+                        question: "Estás creando una aplicación que necesita detectar cuando el usuario presiona teclas específicas para implementar atajos de teclado.<br><br>¿Qué dos eventos son más apropiados para esta funcionalidad? (Selecciona dos.)",
+                        options: [
+                            "onclick",
+                            "onkeypress",
+                            "onkeydown",
+                            "onkeyup",
+                            "onchange"
+                        ],
+                        correctAnswers: [2, 3]
+                    }
+                ]
+            }
+        ];
+
+        // Estado de la aplicación
+        let state = {
+            currentQuestionIndex: 0,
+            currentVariantIndex: 0,
+            questions: [],
+            streak: 0,
+            bestStreak: 0,
+            userAnswers: {},
+            draggedItem: null
+        };
+
+        // Elementos DOM
+        const questionContainer = document.getElementById('question-container');
+        const submitBtn = document.getElementById('submit-btn');
+        const currentQuestionEl = document.getElementById('current-question');
+        const totalQuestionsEl = document.getElementById('total-questions');
+        const streakEl = document.getElementById('streak');
+        const progressBar = document.getElementById('progress-bar');
+        const resultContainer = document.getElementById('result-container');
+        const answeredQuestionsEl = document.getElementById('answered-questions');
+        const bestStreakEl = document.getElementById('best-streak');
+        const restartBtn = document.getElementById('restart-btn');
+
+        // Inicializar el simulador
+        function init() {
+            // Mezclar y preparar preguntas
+            state.questions = prepareQuestions();
+            state.currentQuestionIndex = 0;
+            state.streak = 0;
+            state.bestStreak = 0;
+            state.userAnswers = {};
+            
+            // Actualizar UI
+            updateStats();
+            loadQuestion();
+            
+            // Event listeners
+            submitBtn.addEventListener('click', checkAnswer);
+            restartBtn.addEventListener('click', restartSimulator);
+        }
+
+        // Preparar preguntas seleccionando variantes aleatorias
+        function prepareQuestions() {
+            return questionBank.map(questionType => {
+                const variantIndex = Math.floor(Math.random() * questionType.variants.length);
+                return {
+                    type: questionType.type,
+                    id: questionType.id,
+                    ...questionType.variants[variantIndex]
+                };
+            }).sort(() => Math.random() - 0.5); // Mezclar orden de preguntas
+        }
+
+        // Cargar pregunta actual
+        function loadQuestion() {
+            const question = state.questions[state.currentQuestionIndex];
+            let html = '';
+            
+            // Encabezado común de la pregunta
+            html += `<h3 class="text-xl font-medium mb-4">${question.question}</h3>`;
+            
+            // Añadir visualización del árbol DOM si es necesario
+            if (question.image && question.image.showTree) {
+                html += createDOMTreeVisualization(question.image.treeData);
+            }
+            
+            // Añadir fragmento de código si está disponible
+            if (question.code && typeof question.code === 'string') {
+                html += `<div class="bg-gray-100 p-4 rounded font-mono text-sm mb-4 overflow-x-auto whitespace-pre">${question.code}</div>`;
+            }
+            
+            // Renderizado específico según tipo de pregunta
+            switch (question.type) {
+                case 'multiple-choice':
+                    html += createMultipleChoice(question);
+                    break;
+                    
+                case 'drag-drop':
+                    html += createDragDrop(question);
+                    break;
+                    
+                case 'dropdown-select':
+                    html += createDropdownSelect(question);
+                    break;
+                    
+                case 'multi-select':
+                    html += createMultiSelect(question);
+                    break;
+            }
+            
+            // Actualizar contenedor de preguntas
+            questionContainer.innerHTML = html;
+            
+            // Añadir event listeners según el tipo de pregunta
+            setupQuestionInteractions(question);
+        }
+
+        // Crear pregunta de opción múltiple
+        function createMultipleChoice(question) {
+            let html = `<div class="space-y-2">`;
+            
+            question.options.forEach((option, index) => {
+                html += `<div class="p-3 bg-gray-50 border border-gray-200 rounded cursor-pointer hover:bg-gray-100 transition duration-200 option" data-index="${index}">${option}</div>`;
+            });
+            
+            html += `</div>`;
+            return html;
+        }
+
+        // Crear pregunta de arrastrar y soltar
+        function createDragDrop(question) {
+            let html = `
+                <div class="flex flex-wrap gap-2 mb-4">
+                    ${question.items.map((item, index) => 
+                        `<div class="p-2 bg-blue-50 border border-blue-300 rounded cursor-grab drag-item" draggable="true" data-index="${index}">${item}</div>`
+                    ).sort(() => Math.random() - 0.5).join('')}
+                </div>
+                <div class="min-h-32 border-2 border-dashed border-gray-300 rounded p-4 drop-area" id="drop-area">
+                    <div class="text-gray-500 text-center">Arrastra los elementos aquí en el orden correcto</div>
+                </div>
+            `;
+            return html;
+        }
+
+        // Crear pregunta de selección dropdown
+        function createDropdownSelect(question) {
+            let html = `<div class="space-y-4">`;
+            
+            question.code.forEach((line, index) => {
+                html += `
+                    <div class="flex items-center flex-wrap">
+                        <span class="font-mono mr-2">${line.text}</span>
+                        <select class="bg-white border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 code-dropdown" data-index="${index}">
+                            <option value="" disabled selected>Selecciona una opción</option>
+                            ${line.options.map((option, optIndex) => 
+                                `<option value="${optIndex}">${option}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            return html;
+        }
+
+        // Crear pregunta de selección múltiple (checkboxes)
+        function createMultiSelect(question) {
+            let html = `<div class="space-y-2">`;
+            
+            question.options.forEach((option, index) => {
+                html += `
+                    <div class="flex items-start">
+                        <input type="checkbox" id="option-${index}" data-index="${index}" class="mt-1 mr-2">
+                        <label for="option-${index}" class="cursor-pointer">${option}</label>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            return html;
+        }
+
+        // Crear visualización del árbol DOM
+        function createDOMTreeVisualization(treeData) {
+            // Agrupar nodos por nivel
+            const nodesByLevel = {};
+            treeData.forEach(node => {
+                if (!nodesByLevel[node.level]) {
+                    nodesByLevel[node.level] = [];
+                }
+                nodesByLevel[node.level].push(node);
+            });
+            
+            // Crear HTML del árbol
+            let html = `<div class="mb-6"><div class="relative min-h-48">`;
+            
+            // Crear cada nivel
+            Object.keys(nodesByLevel).sort((a, b) => a - b).forEach(level => {
+                html += `<div class="flex justify-center mb-6">`;
+                
+                nodesByLevel[level].forEach(node => {
+                    html += `<div class="mx-3 px-4 py-1 bg-gray-300 rounded text-center">${node.name}</div>`;
+                });
+                
+                html += `</div>`;
+            });
+            
+            html += `</div></div>`;
+            return html;
+        }
+
+        // Configurar interacciones según el tipo de pregunta
+        function setupQuestionInteractions(question) {
+            switch (question.type) {
+                case 'multiple-choice':
+                    setupMultipleChoice();
+                    break;
+                    
+                case 'drag-drop':
+                    setupDragDrop();
+                    break;
+                    
+                case 'dropdown-select':
+                    // No se necesita configuración especial para dropdowns
+                    break;
+                    
+                case 'multi-select':
+                    // No se necesita configuración especial para checkboxes
+                    break;
+            }
+        }
+
+        // Configurar interacción para opción múltiple
+        function setupMultipleChoice() {
+            const options = document.querySelectorAll('.option');
+            
+            options.forEach(option => {
+                option.addEventListener('click', function() {
+                    // Quitar selección de todas las opciones
+                    options.forEach(opt => {
+                        opt.classList.remove('bg-blue-600', 'text-white');
+                        opt.classList.add('bg-gray-50');
+                    });
+                    
+                    // Añadir selección a la opción clickeada
+                    this.classList.remove('bg-gray-50');
+                    this.classList.add('bg-blue-600', 'text-white');
+                    
+                    // Guardar respuesta del usuario
+                    state.userAnswers[state.currentQuestionIndex] = parseInt(this.dataset.index);
+                });
+            });
+        }
+
+        // Configurar interacción para arrastrar y soltar
+        function setupDragDrop() {
+            const dragItems = document.querySelectorAll('.drag-item');
+            const dropArea = document.querySelector('.drop-area');
+            
+            // Inicializar array de elementos soltados si no existe
+            if (!state.userAnswers[state.currentQuestionIndex]) {
+                state.userAnswers[state.currentQuestionIndex] = [];
+            }
+            
+            // Configurar eventos de arrastre
+            dragItems.forEach(item => {
+                item.addEventListener('dragstart', function(e) {
+                    state.draggedItem = this;
+                    setTimeout(() => this.classList.add('opacity-50'), 0);
+                });
+                
+                item.addEventListener('dragend', function() {
+                    this.classList.remove('opacity-50');
+                    state.draggedItem = null;
+                });
+            });
+            
+            // Configurar área de soltar
+            dropArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('border-blue-500', 'bg-blue-50');
+            });
+            
+            dropArea.addEventListener('dragleave', function() {
+                this.classList.remove('border-blue-500', 'bg-blue-50');
+            });
+            
+            dropArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('border-blue-500', 'bg-blue-50');
+                
+                if (state.draggedItem) {
+                    // Eliminar instrucción de arrastrar si es la primera vez
+                    const instruction = this.querySelector('.text-gray-500');
+                    if (instruction) {
+                        instruction.remove();
+                    }
+                    
+                    // Crear elemento soltado
+                    const itemIndex = parseInt(state.draggedItem.dataset.index);
+                    const droppedItem = document.createElement('div');
+                    droppedItem.className = 'p-2 bg-blue-500 text-white rounded mb-2';
+                    droppedItem.dataset.index = itemIndex;
+                    droppedItem.textContent = state.draggedItem.textContent;
+                    
+                    // Añadir al área de soltar
+                    this.appendChild(droppedItem);
+                    
+                    // Eliminar elemento arrastrado original
+                    state.draggedItem.remove();
+                    
+                    // Actualizar respuesta del usuario
+                    state.userAnswers[state.currentQuestionIndex].push(itemIndex);
+                }
+            });
+        }
+
+        // Verificar respuesta
+        function checkAnswer() {
+            const question = state.questions[state.currentQuestionIndex];
+            let isCorrect = false;
+            
+            switch (question.type) {
+                case 'multiple-choice':
+                    isCorrect = checkMultipleChoice(question);
+                    break;
+                    
+                case 'drag-drop':
+                    isCorrect = checkDragDrop(question);
+                    break;
+                    
+                case 'dropdown-select':
+                    isCorrect = checkDropdownSelect(question);
+                    break;
+                    
+                case 'multi-select':
+                    isCorrect = checkMultiSelect(question);
+                    break;
+            }
+            
+            if (isCorrect) {
+                // Respuesta correcta
+                state.streak++;
+                if (state.streak > state.bestStreak) {
+                    state.bestStreak = state.streak;
+                }
+                
+                // Avanzar a la siguiente pregunta si hay más
+                if (state.currentQuestionIndex < state.questions.length - 1) {
+                    state.currentQuestionIndex++;
+                    updateStats();
+                    loadQuestion();
+                } else {
+                    // Se completaron todas las preguntas
+                    showResults(true);
+                }
+            } else {
+                // Respuesta incorrecta, finalizar racha
+                showResults(false);
+            }
+        }
+
+        // Verificar pregunta de opción múltiple
+        function checkMultipleChoice(question) {
+            const userAnswer = state.userAnswers[state.currentQuestionIndex];
+            return userAnswer === question.correctAnswer;
+        }
+
+        // Verificar pregunta de arrastrar y soltar
+        function checkDragDrop(question) {
+            const userAnswer = state.userAnswers[state.currentQuestionIndex];
+            
+            // Verificar si el usuario ha completado la respuesta
+            if (!userAnswer || userAnswer.length !== question.correctOrder.length) {
+                return false;
+            }
+            
+            // Verificar si el orden es correcto
+            return question.correctOrder.every((correctIndex, position) => 
+                userAnswer[position] === correctIndex
+            );
+        }
+
+        // Verificar pregunta de selección dropdown
+        function checkDropdownSelect(question) {
+            const dropdowns = document.querySelectorAll('.code-dropdown');
+            let allCorrect = true;
+            
+            dropdowns.forEach((dropdown, index) => {
+                const selectedValue = parseInt(dropdown.value);
+                if (selectedValue !== question.code[index].correctAnswer) {
+                    allCorrect = false;
+                }
+            });
+            
+            return allCorrect;
+        }
+
+        // Verificar pregunta de selección múltiple (checkboxes)
+        function checkMultiSelect(question) {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            const selectedIndexes = [];
+            
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selectedIndexes.push(parseInt(checkbox.dataset.index));
+                }
+            });
+            
+           // Verificar cantidad de respuestas
+            if (selectedIndexes.length !== question.correctAnswers.length) {
+                return false;
+            }
+            
+            // Verificar que todas las respuestas seleccionadas son correctas
+            return selectedIndexes.every(index => question.correctAnswers.includes(index));
+        }
+
+        // Mostrar resultados
+        function showResults(completed) {
+            questionContainer.classList.add('hidden');
+            submitBtn.classList.add('hidden');
+            resultContainer.classList.remove('hidden');
+            
+            answeredQuestionsEl.textContent = state.currentQuestionIndex + (completed ? 1 : 0);
+            bestStreakEl.textContent = state.bestStreak;
+            
+            if (completed) {
+                // El usuario completó todas las preguntas
+                document.querySelector('#result-container h2').textContent = '¡Simulador completado!';
+                document.querySelector('#result-container .text-5xl').textContent = '🎓';
+            }
+        }
+
+        // Reiniciar simulador
+        function restartSimulator() {
+            // Reiniciar estado
+            state.currentQuestionIndex = 0;
+            state.streak = 0;
+            state.userAnswers = {};
+            
+            // Actualizar UI
+            questionContainer.classList.remove('hidden');
+            submitBtn.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+            
+            // Preparar nuevas preguntas
+            state.questions = prepareQuestions();
+            
+            // Recargar primera pregunta
+            updateStats();
+            loadQuestion();
+        }
+
+        // Actualizar estadísticas en la UI
+        function updateStats() {
+            currentQuestionEl.textContent = state.currentQuestionIndex + 1;
+            totalQuestionsEl.textContent = state.questions.length;
+            streakEl.textContent = state.streak;
+            
+            // Actualizar barra de progreso
+            const progressPercentage = ((state.currentQuestionIndex) / state.questions.length) * 100;
+            progressBar.style.width = `${progressPercentage}%`;
+        }
+
+        // Iniciar el simulador cuando el DOM está listo
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
